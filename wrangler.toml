@@ -8,7 +8,7 @@ assets = { directory = "./public", binding = "ASSETS" }
 [[d1_databases]]
 binding = "DB"
 database_name = "fifa-db"
-database_id = "e4a0cd81-fa4d-4339-9150-84a822a60661"
+database_id = "9c1e7661-6349-4037-bce1-16a8319c67b1"
 
 # For local dev with KV:
 # [[kv_namespaces]]

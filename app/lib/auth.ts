@@ -8,7 +8,7 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
   const token = getCookie(c, "token");
   if (token) {
     try {
-      const payload = await verify(token, JWT_SECRET) as { sub: string; username: string };
+      const payload = await verify(token, JWT_SECRET, "HS256") as { sub: string; username: string };
       c.set("user", { id: payload.sub, username: payload.username });
 
       if (c.env?.DB) {

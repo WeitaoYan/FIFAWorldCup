@@ -224,8 +224,13 @@ async function homeHandler(c: {
 }
 
 // ========== AUTH ==========
-const authSchema = z.object({
-  username: z.string().min(3).max(20),
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6).max(100),
+});
+const registerSchema = z.object({
+  username: z.string().min(2).max(20),
+  email: z.string().email(),
   password: z.string().min(6).max(100),
 });
 
@@ -239,8 +244,8 @@ async function loginGet(c: any) {
           <h1 class="auth-title">⚽ {t(l, "auth.login_title")}</h1>
           <form action={href(c, "/auth/login")} method="post" class="space-y-4">
             <div>
-              <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t(l, "auth.username")}</label>
-              <input name="username" required class="input-field" placeholder="Enter your username" />
+              <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t(l, "auth.email")}</label>
+              <input type="email" name="email" required class="input-field" placeholder="your@email.com" />
             </div>
             <div>
               <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">{t(l, "auth.password")}</label>
@@ -262,11 +267,11 @@ async function loginPost(c: any) {
   const l = c.var.lang;
   try {
     const body = await c.req.parseBody();
-    const { username, password } = authSchema.parse(body);
-    const user = await c.env.DB.prepare("SELECT id, username, password_hash FROM users WHERE username = ?").bind(username).first<{ id: string; username: string; password_hash: string }>();
+    const { email, password } = loginSchema.parse(body);
+    const user = await c.env.DB.prepare("SELECT id, username, password_hash FROM users WHERE email = ?").bind(email).first<{ id: string; username: string; password_hash: string }>();
     if (!user || !(await verifyPassword(password, user.password_hash))) return c.redirect(href(c, "/auth/login?error=invalid"));
-    const token = await sign({ sub: user.id, username: user.username }, "secret-key");
-    setCookie(c, "token", token, { path: "/", httpOnly: true, secure: true, maxAge: 604800 });
+    const token = await sign({ sub: user.id, username: user.username }, "secret-key", "HS256");
+    setCookie(c, "token", token, { path: "/", httpOnly: true, sameSite: "Lax", maxAge: 604800 });
     return c.redirect(`/${l}`);
   } catch { return c.redirect(href(c, "/auth/login?error=invalid")); }
 }
@@ -306,16 +311,15 @@ async function registerPost(c: any) {
   const l = c.var.lang;
   try {
     const body = await c.req.parseBody();
-    const { username, password } = authSchema.parse(body);
-    const email = String(body.email || "");
-    const existing = await c.env.DB.prepare("SELECT id FROM users WHERE username = ? OR email = ?").bind(username, email).first();
+    const { username, email, password } = registerSchema.parse(body);
+    const existing = await c.env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
     if (existing) return c.redirect(href(c, "/auth/register?error=exists"));
     const id = crypto.randomUUID();
     const hashed = await hashPassword(password);
     await c.env.DB.prepare("INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)").bind(id, username, email, hashed).run();
     await c.env.DB.prepare("INSERT OR IGNORE INTO user_achievements (id, user_id, achievement_id) VALUES (?, ?, (SELECT id FROM achievement_defs WHERE key = 'welcome'))").bind(crypto.randomUUID(), id).run();
-    const token = await sign({ sub: id, username }, "secret-key");
-    setCookie(c, "token", token, { path: "/", httpOnly: true, secure: true, maxAge: 604800 });
+    const token = await sign({ sub: id, username }, "secret-key", "HS256");
+    setCookie(c, "token", token, { path: "/", httpOnly: true, sameSite: "Lax", maxAge: 604800 });
     return c.redirect(`/${l}`);
   } catch { return c.redirect(href(c, "/auth/register?error=invalid")); }
 }
