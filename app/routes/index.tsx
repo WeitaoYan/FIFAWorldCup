@@ -597,8 +597,8 @@ async function profileHandler(c: any) {
             {(achievements.results?.length > 0 ? achievements.results.map((a: any) => (
               <div class="achievement-card">
                 <div class="achievement-icon">{getAchievementIcon(a.key)}</div>
-                <div class="achievement-name">{a.name}</div>
-                <div class="achievement-desc">{a.description}</div>
+                <div class="achievement-name">{t(l, `achievement.${a.key}.name`) || a.name}</div>
+                <div class="achievement-desc">{t(l, `achievement.${a.key}.desc`) || a.description}</div>
               </div>
             )) : (
               <p class="text-gray-400 dark:text-gray-500 col-span-4 text-center py-8">{t(l, "profile.no_achievements")}</p>
@@ -656,8 +656,8 @@ async function achievementsHandler(c: any) {
           {defs.results?.map((a: any, idx: number) => (
             <div class="achievement-card anim-up" style={`animation-delay:${idx*0.04}s`}>
               <div class="achievement-icon">{getAchievementIcon(a.key)}</div>
-              <div class="achievement-name">{a.name}</div>
-              <div class="achievement-desc">{a.description}</div>
+              <div class="achievement-name">{t(l, `achievement.${a.key}.name`) || a.name}</div>
+              <div class="achievement-desc">{t(l, `achievement.${a.key}.desc`) || a.description}</div>
             </div>
           ))}
         </div>
@@ -848,6 +848,18 @@ async function predictPost(c: any) {
   await c.env.DB.prepare(
     "INSERT INTO predictions (id, user_id, match_id, home_pred, away_pred) VALUES (?, ?, ?, ?, ?)"
   ).bind(id, c.var.user.id, matchId, home_pred, away_pred).run();
+
+  // Auto-send a chat message to the global room announcing the prediction
+  try {
+    const homeName = t(l, `team.${match.home_team}`) || match.home_team;
+    const awayName = t(l, `team.${match.away_team}`) || match.away_team;
+    const announceMsg = `🎯 ${c.var.user.username} ${t(l, "chat.predicted")}: ${homeName} ${home_pred}-${away_pred} ${awayName}`;
+    await c.env.DB.prepare(
+      "INSERT INTO chat_messages (id, room_id, user_id, content) VALUES (?, ?, ?, ?)"
+    ).bind(crypto.randomUUID(), "room_global", c.var.user.id, announceMsg).run();
+  } catch (_) {
+    // If chat room doesn't exist yet, just skip the announcement
+  }
 
   return c.redirect(`/${l}/matches/${matchId}`);
 }
