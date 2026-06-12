@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
-  email TEXT UNIQUE NOT NULL,
+  email TEXT UNIQUE DEFAULT '',
   password_hash TEXT NOT NULL,
   points INTEGER DEFAULT 0,
   avatar_url TEXT DEFAULT '',

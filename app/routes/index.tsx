@@ -5,6 +5,7 @@ import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import { sign, verify } from "hono/jwt";
 import { Layout } from "../components/Layout";
 import { t, getLanguage, SUPPORTED_LANGS } from "../lib/i18n";
+import { hashPassword, verifyPassword } from "../lib/crypto";
 import type { Env } from "../index";
 
 const router = new Hono<{
@@ -263,7 +264,7 @@ async function loginPost(c: any) {
     const body = await c.req.parseBody();
     const { username, password } = authSchema.parse(body);
     const user = await c.env.DB.prepare("SELECT id, username, password_hash FROM users WHERE username = ?").bind(username).first<{ id: string; username: string; password_hash: string }>();
-    if (!user || password !== user.password_hash) return c.redirect(href(c, "/auth/login?error=invalid"));
+    if (!user || !(await verifyPassword(password, user.password_hash))) return c.redirect(href(c, "/auth/login?error=invalid"));
     const token = await sign({ sub: user.id, username: user.username }, "secret-key");
     setCookie(c, "token", token, { path: "/", httpOnly: true, secure: true, maxAge: 604800 });
     return c.redirect(`/${l}`);
@@ -310,7 +311,8 @@ async function registerPost(c: any) {
     const existing = await c.env.DB.prepare("SELECT id FROM users WHERE username = ? OR email = ?").bind(username, email).first();
     if (existing) return c.redirect(href(c, "/auth/register?error=exists"));
     const id = crypto.randomUUID();
-    await c.env.DB.prepare("INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)").bind(id, username, email, password).run();
+    const hashed = await hashPassword(password);
+    await c.env.DB.prepare("INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)").bind(id, username, email, hashed).run();
     await c.env.DB.prepare("INSERT OR IGNORE INTO user_achievements (id, user_id, achievement_id) VALUES (?, ?, (SELECT id FROM achievement_defs WHERE key = 'welcome'))").bind(crypto.randomUUID(), id).run();
     const token = await sign({ sub: id, username }, "secret-key");
     setCookie(c, "token", token, { path: "/", httpOnly: true, secure: true, maxAge: 604800 });
