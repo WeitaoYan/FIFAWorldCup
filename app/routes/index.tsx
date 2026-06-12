@@ -909,27 +909,27 @@ async function predictionsHandler(c: any) {
 
 // ========== TEAM CHAT ROOM ==========
 const ALL_TEAMS = [
-  "USA","Canada","Ecuador","Senegal","Mexico","Japan","Serbia","Algeria",
-  "Brazil","Croatia","South Korea","Saudi Arabia","Argentina","Denmark","Nigeria","Australia",
-  "England","Turkey","Iran","Cameroon","France","Portugal","Morocco","Tunisia",
-  "Spain","Uruguay","Ghana","Costa Rica","Germany","Switzerland","Poland","Iraq",
-  "Italy","Colombia","Egypt","UAE","Belgium","Chile","Sweden","Qatar",
-  "Netherlands","Austria","Mali","Panama","Czech Republic","Ukraine","Ivory Coast","New Zealand",
+  "Mexico","South Africa","South Korea","Czechia","Canada","Bosnia and Herzegovina","Qatar","Switzerland",
+  "Brazil","Morocco","Haiti","Scotland","USA","Paraguay","Australia","Türkiye",
+  "Germany","Curaçao","Ivory Coast","Ecuador","Netherlands","Japan","Sweden","Tunisia",
+  "Belgium","Egypt","Iran","New Zealand","Spain","Cape Verde","Saudi Arabia","Uruguay",
+  "France","Senegal","Iraq","Norway","Argentina","Algeria","Austria","Jordan",
+  "Portugal","DR Congo","Uzbekistan","Colombia","England","Croatia","Ghana","Panama",
 ];
 
 const TEAM_FLAGS: Record<string, string> = {
-  "USA": "us", "Canada": "ca", "Ecuador": "ec", "Senegal": "sn",
-  "Mexico": "mx", "Japan": "jp", "Serbia": "rs", "Algeria": "dz",
-  "Brazil": "br", "Croatia": "hr", "South Korea": "kr", "Saudi Arabia": "sa",
-  "Argentina": "ar", "Denmark": "dk", "Nigeria": "ng", "Australia": "au",
-  "England": "gb-eng", "Turkey": "tr", "Iran": "ir", "Cameroon": "cm",
-  "France": "fr", "Portugal": "pt", "Morocco": "ma", "Tunisia": "tn",
-  "Spain": "es", "Uruguay": "uy", "Ghana": "gh", "Costa Rica": "cr",
-  "Germany": "de", "Switzerland": "ch", "Poland": "pl", "Iraq": "iq",
-  "Italy": "it", "Colombia": "co", "Egypt": "eg", "UAE": "ae",
-  "Belgium": "be", "Chile": "cl", "Sweden": "se", "Qatar": "qa",
-  "Netherlands": "nl", "Austria": "at", "Mali": "ml", "Panama": "pa",
-  "Czech Republic": "cz", "Ukraine": "ua", "Ivory Coast": "ci", "New Zealand": "nz",
+  "Mexico": "mx", "South Africa": "za", "South Korea": "kr", "Czechia": "cz",
+  "Canada": "ca", "Bosnia and Herzegovina": "ba", "Qatar": "qa", "Switzerland": "ch",
+  "Brazil": "br", "Morocco": "ma", "Haiti": "ht", "Scotland": "gb-sct",
+  "USA": "us", "Paraguay": "py", "Australia": "au", "Türkiye": "tr",
+  "Germany": "de", "Curaçao": "cw", "Ivory Coast": "ci", "Ecuador": "ec",
+  "Netherlands": "nl", "Japan": "jp", "Sweden": "se", "Tunisia": "tn",
+  "Belgium": "be", "Egypt": "eg", "Iran": "ir", "New Zealand": "nz",
+  "Spain": "es", "Cape Verde": "cv", "Saudi Arabia": "sa", "Uruguay": "uy",
+  "France": "fr", "Senegal": "sn", "Iraq": "iq", "Norway": "no",
+  "Argentina": "ar", "Algeria": "dz", "Austria": "at", "Jordan": "jo",
+  "Portugal": "pt", "DR Congo": "cd", "Uzbekistan": "uz", "Colombia": "co",
+  "England": "gb-eng", "Croatia": "hr", "Ghana": "gh", "Panama": "pa",
 };
 
 function flagUrl(name: string): string | null {
