@@ -99,7 +99,7 @@ async function homeHandler(c: {
             {recentMatches.length > 0 ? recentMatches.map((m, idx) => (
               <a href={`/${l}/matches/${m.id}`} class={`match-card anim-up-${idx+2}`}>
                 <div class="match-card-header">
-                  <span class="match-card-date">{m.match_date}</span>
+                  <span class="match-card-date">{localTime(m.match_date, { showDate: true })}</span>
                   <span class={`stage-badge ${m.stage}`}>{m.stage === "group" ? `Group ${m.group_name}` : m.stage.replace(/_/g, " ")}</span>
                 </div>
                 <div class="flex items-center mt-2">
@@ -336,7 +336,8 @@ async function scheduleHandler(c: any) {
   const matches = await c.env.DB.prepare("SELECT * FROM matches ORDER BY match_date ASC").all<any>();
   const grouped: Record<string, any[]> = {};
   for (const m of matches.results ?? []) {
-    const d = m.match_date.split(" ")[0];
+    // Group by UTC date (first 10 chars of match_date)
+    const d = m.match_date.slice(0, 10);
     if (!grouped[d]) grouped[d] = [];
     grouped[d].push(m);
   }
@@ -352,7 +353,7 @@ async function scheduleHandler(c: any) {
             <div class="flex items-center gap-3 mb-5">
               <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white font-bold text-sm shadow-md">{date.split("-")[2]}</div>
               <div>
-                <div class="font-bold text-gray-900 dark:text-white">{date}</div>
+                <div class="font-bold text-gray-900 dark:text-white">{localTime(date + " 00:00", { showDate: true })}</div>
                 <div class="text-xs text-gray-500">{ms.length} matches</div>
               </div>
             </div>
@@ -365,11 +366,20 @@ async function scheduleHandler(c: any) {
                       <span class="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate max-w-full">{teamName(l, m.home_team)}</span>
                     </div>
                     <div class="flex-shrink-0 text-center px-3 sm:px-6">
-                      {m.home_score != null ? (
-                        <span class="match-card-score">{m.home_score} - {m.away_score}</span>
-                      ) : (
-                        <span class="match-card-vs">VS</span>
-                      )}
+                      {(() => {
+                        if (m.home_score != null) {
+                          return <span class="match-card-score">{m.home_score} - {m.away_score}</span>;
+                        }
+                        const matchTime = parseMatchDate(m.match_date);
+                        const now = Date.now();
+                        if (matchTime <= now && now - matchTime <= 2 * 60 * 60 * 1000) {
+                          return <span class="text-sm font-bold text-red-500 animate-pulse">LIVE</span>;
+                        }
+                        if (matchTime <= now) {
+                          return <span class="text-sm font-bold text-gray-400">FT</span>;
+                        }
+                        return <span class="match-card-vs">VS</span>;
+                      })()}
                       <div class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 uppercase tracking-wider">
                         <span class={`stage-badge ${m.stage}`}>{m.stage === "group" ? `Group ${m.group_name}` : m.stage.replace(/_/g, " ")}</span>
                       </div>
@@ -429,7 +439,7 @@ async function resultsHandler(c: any) {
                     {m.home_score} - {m.away_score}
                   </div>
                   <div class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-                    {m.match_date}
+                    {localTime(m.match_date, { showDate: false })}
                   </div>
                   <div class="mt-0.5">
                     <span class={`stage-badge ${m.stage}`}>{m.stage === "group" ? `Group ${m.group_name}` : m.stage.replace(/_/g, " ")}</span>
@@ -715,7 +725,8 @@ async function matchDetailHandler(c: any) {
     "SELECT mc.*, u.username FROM match_comments mc JOIN users u ON u.id = mc.user_id WHERE mc.match_id = ? ORDER BY mc.created_at DESC LIMIT 30"
   ).bind(matchId).all<any>();
 
-  const canPredict = match.status === "scheduled" && !userPred && !!c.var.user;
+  const matchStarted = parseMatchDate(match.match_date) <= Date.now();
+  const canPredict = match.status === "scheduled" && !matchStarted && !userPred && !!c.var.user;
 
   return c.html(
     <Layout title={`${teamName(l, match.home_team)} vs ${teamName(l, match.away_team)} - FIFA 2026`} description={`${match.stage} match: ${teamName(l, match.home_team)} vs ${teamName(l, match.away_team)}`} lang={l} user={c.var.user}>
@@ -726,7 +737,7 @@ async function matchDetailHandler(c: any) {
             <span class={`stage-badge ${match.stage}`}>{match.stage.replace(/_/g, " ")}</span>
             {match.group_name && <span class="badge badge-blue">{match.group_name}</span>}
           </div>
-          <div class="text-sm text-gray-500 dark:text-gray-400 mb-6">{match.match_date}{match.venue ? ` · ${match.venue}` : ""}</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400 mb-6">{localTime(match.match_date, { showDate: true })}{match.venue ? ` · ${match.venue}` : ""}</div>
 
           <div class="flex items-center justify-center gap-6 sm:gap-12 py-4">
             <div class="text-center flex-1">
@@ -840,6 +851,10 @@ async function predictPost(c: any) {
 
   const match = await c.env.DB.prepare("SELECT * FROM matches WHERE id = ?").bind(matchId).first<any>();
   if (!match || match.status !== "scheduled") return c.redirect(`/${l}/matches/${matchId}?error=closed`);
+  // 比赛开始后不允许竞猜
+  if (parseMatchDate(match.match_date) <= Date.now()) {
+    return c.redirect(`/${l}/matches/${matchId}?error=started`);
+  }
 
   const existing = await c.env.DB.prepare("SELECT id FROM predictions WHERE user_id = ? AND match_id = ?").bind(c.var.user.id, matchId).first();
   if (existing) return c.redirect(`/${l}/matches/${matchId}?error=duplicate`);
@@ -905,7 +920,7 @@ async function predictionsHandler(c: any) {
                 </div>
                 <div class="flex-shrink-0 text-center px-3 sm:px-6">
                   <span class="match-card-vs">VS</span>
-                  <div class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{m.match_date}</div>
+                  <div class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{localTime(m.match_date, { showDate: false })}</div>
                   <div class="mt-0.5">
                     <span class={`stage-badge ${m.stage}`}>{m.stage === "group" ? `Group ${m.group_name}` : m.stage.replace(/_/g, " ")}</span>
                   </div>
@@ -1157,6 +1172,79 @@ function ChatRoom({ roomId, lang, user, initialMessages }: {
 }
 
 // ========== SCORING API ==========
+async function updateStandings(db: D1Database, match: any) {
+  // Only update standings for group stage matches
+  if (!match.group_name || match.home_score === null || match.away_score === null) return;
+
+  // Check if standings already updated for this match (幂等)
+  const alreadyDone = await db.prepare(
+    "SELECT standings_updated FROM matches WHERE id = ?"
+  ).bind(match.id).first<{standings_updated: number}>();
+  if (alreadyDone?.standings_updated) return;
+
+  const homeScore = match.home_score;
+  const awayScore = match.away_score;
+
+  // Home team
+  await db.prepare(`
+    INSERT INTO standings (id, team_name, group_name, played, won, drawn, lost, goals_for, goals_against, goal_diff, points)
+    VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(team_name, group_name) DO UPDATE SET
+      played = played + 1,
+      won = won + ?,
+      drawn = drawn + ?,
+      lost = lost + ?,
+      goals_for = goals_for + ?,
+      goals_against = goals_against + ?,
+      goal_diff = goal_diff + (? - ?),
+      points = points + ?
+  `).bind(
+    `s_${match.home_team}_${match.group_name}`, match.home_team, match.group_name,
+    homeScore > awayScore ? 1 : 0,
+    homeScore === awayScore ? 1 : 0,
+    homeScore < awayScore ? 1 : 0,
+    homeScore, awayScore,
+    homeScore > awayScore ? 1 : 0,
+    homeScore === awayScore ? 1 : 0,
+    homeScore < awayScore ? 1 : 0,
+    homeScore, awayScore,
+    homeScore, awayScore,
+    homeScore > awayScore ? 3 : (homeScore === awayScore ? 1 : 0)
+  ).run();
+
+  // Away team
+  await db.prepare(`
+    INSERT INTO standings (id, team_name, group_name, played, won, drawn, lost, goals_for, goals_against, goal_diff, points)
+    VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(team_name, group_name) DO UPDATE SET
+      played = played + 1,
+      won = won + ?,
+      drawn = drawn + ?,
+      lost = lost + ?,
+      goals_for = goals_for + ?,
+      goals_against = goals_against + ?,
+      goal_diff = goal_diff + (? - ?),
+      points = points + ?
+  `).bind(
+    `s_${match.away_team}_${match.group_name}`, match.away_team, match.group_name,
+    awayScore > homeScore ? 1 : 0,
+    awayScore === homeScore ? 1 : 0,
+    awayScore < homeScore ? 1 : 0,
+    awayScore, homeScore,
+    awayScore > homeScore ? 1 : 0,
+    awayScore === homeScore ? 1 : 0,
+    awayScore < homeScore ? 1 : 0,
+    awayScore, homeScore,
+    awayScore, homeScore,
+    awayScore > homeScore ? 3 : (awayScore === homeScore ? 1 : 0)
+  ).run();
+
+  // Mark match as standings-updated to prevent double-counting
+  await db.prepare(
+    "UPDATE matches SET standings_updated = 1 WHERE id = ?"
+  ).bind(match.id).run();
+}
+
 async function scoreMatchHandler(c: any) {
   const matchId = c.req.param("matchId");
   const match = await c.env.DB.prepare("SELECT * FROM matches WHERE id = ? AND status = 'finished'").bind(matchId).first<any>();
@@ -1166,19 +1254,24 @@ async function scoreMatchHandler(c: any) {
     "SELECT * FROM predictions WHERE match_id = ? AND points_earned = 0"
   ).bind(matchId).all<any>();
 
-  if (!predictions.results?.length) return c.json({ scored: 0 });
-
+  const { calculateAndSavePoints, checkAndAwardAchievements } = await import("../lib/points");
   let scored = 0;
+  const errors: string[] = [];
   for (const p of predictions.results) {
-    const { calculateAndSavePoints, checkAndAwardAchievements } = await import("../lib/points");
     try {
       await calculateAndSavePoints(c.env.DB, p.user_id, p.id, matchId);
       await checkAndAwardAchievements(c.env.DB, p.user_id);
       scored++;
-    } catch {}
+    } catch (e: any) {
+      errors.push(e.message || String(e));
+      console.error(`Score error for prediction ${p.id}:`, e);
+    }
   }
 
-  return c.json({ scored, match_id: matchId });
+  // 更新 standings 表（幂等，重复调用安全）
+  await updateStandings(c.env.DB, match);
+
+  return c.json({ scored, match_id: matchId, errors: errors.length > 0 ? errors : undefined });
 }
 
 // ========== ROUTE DEFINITIONS ==========
@@ -1236,6 +1329,28 @@ async function getTopUsers(db: D1Database) {
 function getAchievementIcon(key: string): string {
   const icons: Record<string, string> = { welcome: "🎉", first_correct: "🎯", streak_5: "🔥", streak_10: "💥", prediction_50: "⭐", perfect_group: "🏆", chatty: "💬", social_butterfly: "🦋", top10: "👑", early_bird: "🐦", knockout_master: "🏅", champion_predict: "🌍" };
   return icons[key] || "🏅";
+}
+
+// match_date stored as UTC text "2026-06-11 14:00" → parse to timestamp
+function parseMatchDate(dateStr: string): number {
+  return new Date(dateStr.replace(" ", "T") + "Z").getTime();
+}
+
+// Convert "2026-06-11 14:00" to ISO 8601 string "2026-06-11T14:00:00Z"
+function toISOString(dateStr: string): string {
+  return dateStr.replace(" ", "T") + ":00Z";
+}
+
+// Render a <time> element that shows UTC time and gets converted to local time by client JS
+function localTime(dateStr: string, opts?: { showDate?: boolean; className?: string }) {
+  const iso = toISOString(dateStr);
+  const showDate = opts?.showDate !== false;
+  const cls = opts?.className || "";
+  return (
+    <time class={`local-time ${cls}`} datetime={iso} data-show-date={showDate ? "1" : "0"}>
+      {iso.replace("T", " ").replace(":00Z", "")} UTC
+    </time>
+  );
 }
 
 export { router };

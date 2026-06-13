@@ -25,7 +25,11 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
         <meta property="og:description" content={description} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="FIFA World Cup 2026 Fan Hub" />
+        <meta property="og:image" content="https://2026.ikber.cc/images/og-share.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://2026.ikber.cc/images/og-share.png" />
         <link rel="alternate" href={`/en${currentPath}`} hrefLang="en" />
         <link rel="alternate" href={`/zh${currentPath}`} hrefLang="zh" />
         <link rel="alternate" href={`/fr${currentPath}`} hrefLang="fr" />
@@ -444,6 +448,21 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                 hero.appendChild(p);
                 particles.push(p);
               }
+            })();
+
+            // --- Local time conversion ---
+            (function(){
+              var els = document.querySelectorAll('time.local-time');
+              els.forEach(function(el) {
+                var iso = el.getAttribute('datetime');
+                if (!iso) return;
+                var d = new Date(iso);
+                if (isNaN(d.getTime())) return;
+                var showDate = el.getAttribute('data-show-date') === '1';
+                var dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                var timeStr = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                el.textContent = showDate ? (dateStr + ' ' + timeStr) : timeStr;
+              });
             })();
           `
         }} />
