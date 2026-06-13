@@ -25,9 +25,9 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
         <meta property="og:description" content={description} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="FIFA World Cup 2026 Fan Hub" />
-        <meta property="og:image" content="https://2026.ikber.cc/images/og-share.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+        <meta property="og:image" content="https://2026.ikber.cc/images/og-share.jpg" />
+        <meta property="og:image:width" content="541" />
+        <meta property="og:image:height" content="520" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="https://2026.ikber.cc/images/og-share.png" />
         <link rel="alternate" href={`/en${currentPath}`} hrefLang="en" />
@@ -45,8 +45,8 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
               (function(){
                 try {
                   var t = localStorage.getItem("theme") || document.cookie.match(/theme=([^;]+)/)?.[1];
-                  if (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
-                  if (t === "dark") document.documentElement.classList.add("dark");
+                  // Default to dark theme unless user explicitly chose light
+                  if (!t || t === "dark") document.documentElement.classList.add("dark");
                 } catch(e) {}
               })()
             `,
@@ -194,8 +194,8 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                   var stored = localStorage.getItem(STORAGE_KEY);
                   if (stored === DARK || stored === LIGHT) return stored;
                 } catch(e) {}
-                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return DARK;
-                return LIGHT;
+                // Default to dark theme
+                return DARK;
               }
 
               function apply(t) {
@@ -218,11 +218,11 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                 });
               });
 
-              // Listen for system theme changes (when no manual preference set)
+              // Listen for system theme changes (only when user hasn't manually set a preference)
               if (window.matchMedia) {
                 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
                   try { if (localStorage.getItem(STORAGE_KEY)) return; } catch(_) {}
-                  apply(e.matches ? DARK : LIGHT);
+                  apply(DARK);
                 });
               }
             })();

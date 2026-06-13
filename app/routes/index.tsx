@@ -46,10 +46,16 @@ async function homeHandler(c: {
           </h1>
           {/* Countdown */}
           <div class="hero-countdown-display anim-hero-3 mx-auto mb-6">
-            <span class="countdown-number" id="countdown-days">{countdown.split(" ")[0]}</span>
-            <span class="countdown-label">Days</span>
-            <span class="countdown-number">{countdown.split(" ")[2]}</span>
-            <span class="countdown-label">Hours</span>
+            {countdown.startsWith("The tournament has begun") ? (
+              <span class="countdown-number" style="font-size:1.5rem;letter-spacing:0.05em;">⚽ {t(l, "home.tournament_live")}</span>
+            ) : (
+              <>
+                <span class="countdown-number" id="countdown-days">{countdown.split(" ")[0]}</span>
+                <span class="countdown-label">{t(l, "home.days")}</span>
+                <span class="countdown-number">{countdown.split(" ")[2]}</span>
+                <span class="countdown-label">{t(l, "home.hours")}</span>
+              </>
+            )}
           </div>
           {/* Subtitle */}
           <p class="text-base text-gray-400 max-w-lg mx-auto anim-hero-3 mb-10">{t(l, "home.subtitle")}</p>
