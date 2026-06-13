@@ -1,16 +1,34 @@
-import { t } from "../lib/i18n";
+import { Header } from "./Header";
+import { Footer } from "./Footer";
 
 interface LayoutProps {
   title: string;
   description: string;
   lang: string;
+  url: string;
+  keywords?: string;
+  ogType?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  jsonLd?: string;
   user: { id: string; username: string } | null;
   children: any;
 }
 
-function Layout({ title, description, lang, user, children }: LayoutProps) {
+const SITE_DOMAIN = "https://2026.ikber.cc";
+
+const LOCALE_MAP: Record<string, string> = {
+  en: "en_US", zh: "zh_CN", fr: "fr_FR", es: "es_ES",
+  ru: "ru_RU", ja: "ja_JP", ko: "ko_KR", hi: "hi_IN",
+};
+
+function Layout({ title, description, lang, url, keywords, ogType, ogImage, canonicalUrl, jsonLd, user, children }: LayoutProps) {
   const currentPath = "";
   const dir = lang === "ar" ? "rtl" : "ltr";
+  const ogLocale = LOCALE_MAP[lang] || "en_US";
+  const allLocales = Object.values(LOCALE_MAP);
+  const finalCanonical = canonicalUrl || `${SITE_DOMAIN}/${lang}${currentPath}`;
+  const finalOgImage = ogImage || `${SITE_DOMAIN}/images/og-share.jpg`;
 
   return (
     <html lang={lang} dir={dir} class="">
@@ -19,33 +37,46 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="theme-color" content="#06080d" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#f5f0e8" media="(prefers-color-scheme: light)" />
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+        <meta name="googlebot" content="index, follow" />
         <title>{title}</title>
         <meta name="description" content={description} />
+        {keywords && <meta name="keywords" content={keywords} />}
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
-        <meta property="og:type" content="website" />
+        <meta property="og:url" content={finalCanonical} />
+        <meta property="og:type" content={ogType || "website"} />
         <meta property="og:site_name" content="FIFA World Cup 2026 Fan Hub" />
-        <meta property="og:image" content="https://2026.ikber.cc/images/og-share.jpg" />
-        <meta property="og:image:width" content="541" />
-        <meta property="og:image:height" content="520" />
+        <meta property="og:locale" content={ogLocale} />
+        {allLocales.filter(l => l !== ogLocale).map(l => (
+          <meta property="og:locale:alternate" content={l} />
+        ))}
+        <meta property="og:image" content={finalOgImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={title} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="https://2026.ikber.cc/images/og-share.png" />
-        <link rel="alternate" href={`/en${currentPath}`} hrefLang="en" />
-        <link rel="alternate" href={`/zh${currentPath}`} hrefLang="zh" />
-        <link rel="alternate" href={`/fr${currentPath}`} hrefLang="fr" />
-        <link rel="alternate" href={`/es${currentPath}`} hrefLang="es" />
-        <link rel="alternate" href={`/ru${currentPath}`} hrefLang="ru" />
-        <link rel="alternate" href={`/ja${currentPath}`} hrefLang="ja" />
-        <link rel="alternate" href={`/ko${currentPath}`} hrefLang="ko" />
-        <link rel="alternate" href={`/hi${currentPath}`} hrefLang="hi" />
-        <link rel="canonical" href={`/${lang}${currentPath}`} />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={finalOgImage} />
+        <meta name="twitter:site" content="@FIFAWorldCup" />
+        <link rel="alternate" href={`${SITE_DOMAIN}/en${currentPath}`} hrefLang="en" />
+        <link rel="alternate" href={`${SITE_DOMAIN}/zh${currentPath}`} hrefLang="zh" />
+        <link rel="alternate" href={`${SITE_DOMAIN}/fr${currentPath}`} hrefLang="fr" />
+        <link rel="alternate" href={`${SITE_DOMAIN}/es${currentPath}`} hrefLang="es" />
+        <link rel="alternate" href={`${SITE_DOMAIN}/ru${currentPath}`} hrefLang="ru" />
+        <link rel="alternate" href={`${SITE_DOMAIN}/ja${currentPath}`} hrefLang="ja" />
+        <link rel="alternate" href={`${SITE_DOMAIN}/ko${currentPath}`} hrefLang="ko" />
+        <link rel="alternate" href={`${SITE_DOMAIN}/hi${currentPath}`} hrefLang="hi" />
+        <link rel="alternate" href={`${SITE_DOMAIN}/${lang}${currentPath}`} hrefLang="x-default" />
+        <link rel="canonical" href={finalCanonical} />
+        {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function(){
                 try {
                   var t = localStorage.getItem("theme") || document.cookie.match(/theme=([^;]+)/)?.[1];
-                  // Default to dark theme unless user explicitly chose light
                   if (!t || t === "dark") document.documentElement.classList.add("dark");
                 } catch(e) {}
               })()
@@ -103,7 +134,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
           .lang-option-label{font-size:11px;color:#9ca3af;line-height:1.3}
           .lang-option-check{width:16px;height:16px;color:#2563eb;flex-shrink:0}
           .dark .lang-option-check{color:#60a5fa}
-          /* --- Online Count Badge --- */
           @keyframes onlinePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.8)}}
           @keyframes onlineGlow{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
           @keyframes onlineRing{0%{transform:scale(.8);opacity:1}100%{transform:scale(2.2);opacity:0}}
@@ -126,7 +156,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
           .online-badge-label{font-size:10px;font-weight:600;color:#6ee7b7;text-transform:uppercase;letter-spacing:.05em;display:none}
           .dark .online-badge-label{color:#6ee7b7}
           @media(min-width:400px){.online-badge-label{display:inline}}
-          /* --- Theme Toggle --- */
           @keyframes themeStarTwinkle{0%,100%{opacity:0;transform:scale(.3)}50%{opacity:1;transform:scale(1)}}
           .theme-toggle{position:relative;display:flex;align-items:center;justify-content:center;width:44px;height:36px;padding:0;border:none;border-radius:12px;background:transparent;cursor:pointer;transition:all .3s ease;-webkit-tap-highlight-color:transparent}
           .theme-toggle:hover{background:#f3f4f6}
@@ -147,7 +176,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
           .theme-toggle-star-1{top:4px;right:6px;animation-delay:0s}
           .theme-toggle-star-2{top:10px;right:3px;animation-delay:.8s}
           .theme-toggle-star-3{bottom:5px;right:8px;animation-delay:1.6s}
-          /* --- Hamburger Button --- */
           @keyframes menuSlideDown{0%{opacity:0;transform:translateY(-12px)}100%{opacity:1;transform:translateY(0)}}
           .hamburger{display:flex;align-items:center;justify-content:center;width:40px;height:36px;padding:0;border:none;border-radius:12px;background:transparent;cursor:pointer;transition:all .25s ease;-webkit-tap-highlight-color:transparent;margin-left:4px}
           .hamburger:hover{background:#f3f4f6}
@@ -161,13 +189,11 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
           .hamburger-line-top{top:0}
           .hamburger-line-middle{top:7px}
           .hamburger-line-bottom{top:14px}
-          /* Open state: top & bottom → X, middle → fade out */
           .hamburger[aria-expanded="true"] .hamburger-line-top{top:7px;transform:rotate(45deg)}
           .hamburger[aria-expanded="true"] .hamburger-line-middle{opacity:0;transform:scaleX(0)}
           .hamburger[aria-expanded="true"] .hamburger-line-bottom{top:7px;transform:rotate(-45deg)}
           .hamburger[aria-expanded="true"] .hamburger-line{background:#2563eb}
           .dark .hamburger[aria-expanded="true"] .hamburger-line{background:#60a5fa}
-          /* Mobile menu panel */
           #mobile-menu{overflow:hidden}
           #mobile-menu:not(.hidden){animation:menuSlideDown .35s cubic-bezier(.16,1,.3,1) both}
         `}</style>
@@ -194,7 +220,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                   var stored = localStorage.getItem(STORAGE_KEY);
                   if (stored === DARK || stored === LIGHT) return stored;
                 } catch(e) {}
-                // Default to dark theme
                 return DARK;
               }
 
@@ -209,7 +234,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                 if (meta) meta.setAttribute('content', t === DARK ? '#06080d' : '#f5f0e8');
               }
 
-              // Apply saved preference immediately (avoids flash)
               apply(getPref());
 
               document.querySelectorAll('[data-theme-toggle]').forEach(function(btn) {
@@ -218,7 +242,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                 });
               });
 
-              // Listen for system theme changes (only when user hasn't manually set a preference)
               if (window.matchMedia) {
                 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
                   try { if (localStorage.getItem(STORAGE_KEY)) return; } catch(_) {}
@@ -242,7 +265,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                   panel.classList.remove('hidden');
                   backdrop.classList.remove('hidden');
                   trigger.setAttribute('aria-expanded', 'true');
-                  // Focus the active option
                   var active = panel.querySelector('.lang-option-active') || options[0];
                   if (active) { active.focus(); active.setAttribute('tabindex', '0'); }
                 }
@@ -262,12 +284,10 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
 
                 backdrop.addEventListener('click', close);
 
-                // Close on Escape
                 document.addEventListener('keydown', function(e) {
                   if (e.key === 'Escape' && isOpen) { close(); }
                 });
 
-                // Language option click
                 options.forEach(function(opt) {
                   opt.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -279,7 +299,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                   });
                 });
 
-                // Keyboard navigation within panel
                 panel.addEventListener('keydown', function(e) {
                   var items = panel.querySelectorAll('[data-lang-switch]');
                   var focused = document.activeElement;
@@ -311,7 +330,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                 function step(now) {
                   var elapsed = now - start;
                   var progress = Math.min(elapsed / duration, 1);
-                  // Ease-out cubic
                   var eased = 1 - Math.pow(1 - progress, 3);
                   el.textContent = Math.round(from + (to - from) * eased);
                   if (progress < 1) requestAnimationFrame(step);
@@ -327,14 +345,11 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                     retries = 0;
                     var val = typeof d.online === 'number' ? d.online : parseInt(d.online, 10) || 0;
                     if (currentVal === -1) {
-                      // First load: set immediately
                       els.forEach(function(el) { el.textContent = val; });
                     } else if (val !== currentVal) {
-                      // Animate change
                       els.forEach(function(el) { animateValue(el, currentVal, val); });
                     }
                     currentVal = val;
-                    // Add pulse effect on badges
                     badges.forEach(function(b) {
                       b.classList.add('online-badge-updated');
                       setTimeout(function() { b.classList.remove('online-badge-updated'); }, 600);
@@ -351,7 +366,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
               updateOnline();
               setInterval(updateOnline, 30000);
 
-              // Refresh on visibility change (tab switch)
               document.addEventListener('visibilitychange', function() {
                 if (!document.hidden) updateOnline();
               });
@@ -380,7 +394,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                 toggle.setAttribute('aria-expanded', 'true');
                 toggle.setAttribute('aria-label', 'Close navigation menu');
                 document.body.style.overflow = 'hidden';
-                // Focus first link in menu
                 var firstLink = menu.querySelector('a');
                 if (firstLink) setTimeout(function() { firstLink.focus(); }, 100);
               }
@@ -399,24 +412,20 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                 isOpen ? close() : open();
               });
 
-              // Close when clicking menu links
               menu.querySelectorAll('a').forEach(function(link) {
                 link.addEventListener('click', function() { close(); });
               });
 
-              // Close on Escape
               document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && isOpen) { close(); }
               });
 
-              // Close when clicking outside
               document.addEventListener('click', function(e) {
                 if (isOpen && !menu.contains(e.target) && e.target !== toggle) {
                   close();
                 }
               });
 
-              // Trap focus within menu when open
               menu.addEventListener('keydown', function(e) {
                 if (e.key !== 'Tab' || !isOpen) return;
                 var focusable = menu.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])');
@@ -436,7 +445,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
             (function(){
               var hero=document.querySelector('.hero-section');
               if(!hero) return;
-              var particles=[];
               for(var i=0;i<20;i++){
                 var p=document.createElement('div');
                 p.className='hero-particle '+(i%3===0?'gold':'blue');
@@ -446,7 +454,6 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
                 p.style.height=p.style.width;
                 p.style.animation='particleDrift '+(3+Math.random()*5)+'s ease-in-out '+(Math.random()*4)+'s infinite';
                 hero.appendChild(p);
-                particles.push(p);
               }
             })();
 
@@ -471,261 +478,4 @@ function Layout({ title, description, lang, user, children }: LayoutProps) {
   );
 }
 
-function Header({ lang, user }: { lang: string; user: { id: string; username: string } | null }) {
-  const nav = [
-    { href: `/${lang}`, labelKey: "nav.home" },
-    { href: `/${lang}/schedule`, labelKey: "nav.schedule" },
-    { href: `/${lang}/results`, labelKey: "nav.results" },
-    { href: `/${lang}/standings`, labelKey: "nav.standings" },
-    { href: `/${lang}/predictions`, labelKey: "nav.predictions" },
-    { href: `/${lang}/community`, labelKey: "nav.community" },
-    { href: `/${lang}/leaderboard`, labelKey: "nav.leaderboard" },
-  ];
-
-  return (
-    <header class="site-header">
-      <div class="max-w-7xl mx-auto px-4">
-        <div class="flex items-center justify-between h-16">
-          {/* Logo */}
-          <a href={`/${lang}`} class="flex items-center gap-2.5 group flex-shrink-0">
-            <div class="relative">
-              <span class="text-xl font-black gold-text-preload tracking-tighter">2026</span>
-              <div class="absolute -bottom-0.5 left-0 w-full h-0.5 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-            </div>
-            <span class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 hidden sm:inline tracking-widest uppercase leading-tight max-w-[70px]">
-              FIFA<br/>World Cup
-            </span>
-          </a>
-
-          {/* Desktop: full nav + actions */}
-          <nav class="hidden md:flex items-center gap-0.5">
-            {nav.map((item) => (
-              <a href={item.href} class="nav-link">{t(lang, item.labelKey)}</a>
-            ))}
-          </nav>
-
-          <div class="hidden md:flex items-center gap-1.5">
-            <OnlineCount />
-            <LanguageSwitcher currentLang={lang} />
-            <ThemeToggle />
-            {user ? (
-              <a href={`/${lang}/profile`} class="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ml-1">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-xs font-bold text-white shadow-sm">
-                  {user.username.charAt(0).toUpperCase()}
-                </div>
-                <span class="hidden sm:inline font-medium">{user.username}</span>
-              </a>
-            ) : (
-              <a href={`/${lang}/auth/login`} class="btn btn-gold btn-sm ml-1">
-                {t(lang, "nav.login")}
-              </a>
-            )}
-          </div>
-
-          {/* Mobile: only lang + login/user + hamburger */}
-          <div class="flex md:hidden items-center gap-1">
-            <LanguageSwitcher currentLang={lang} />
-            {user ? (
-              <a href={`/${lang}/profile`} class="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-xs font-bold text-white shadow-sm hover:shadow-md transition-shadow">
-                {user.username.charAt(0).toUpperCase()}
-              </a>
-            ) : (
-              <a href={`/${lang}/auth/login`} class="btn btn-gold btn-sm !py-1.5 !px-3 text-xs">
-                {t(lang, "nav.login")}
-              </a>
-            )}
-            <button
-              id="mobile-menu-toggle"
-              class="hamburger"
-              aria-label="Toggle navigation menu"
-              aria-expanded="false"
-            >
-              <span class="hamburger-box">
-                <span class="hamburger-line hamburger-line-top"></span>
-                <span class="hamburger-line hamburger-line-middle"></span>
-                <span class="hamburger-line hamburger-line-bottom"></span>
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        <div id="mobile-menu" class="hidden md:hidden border-t border-gray-100 dark:border-gray-700 py-3 pb-4">
-          <nav class="flex flex-col gap-0.5">
-            {nav.map((item) => (
-              <a href={item.href} class="nav-link block py-2.5 px-3 rounded-lg">{t(lang, item.labelKey)}</a>
-            ))}
-          </nav>
-          <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between px-3">
-            <OnlineCount />
-            <ThemeToggle />
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function OnlineCount() {
-  return (
-    <div class="online-badge" data-online-badge title="Fans online right now">
-      <span class="online-badge-glow"></span>
-      <span class="online-badge-inner">
-        <span class="online-badge-dot">
-          <span class="online-badge-dot-core"></span>
-          <span class="online-badge-dot-ring"></span>
-        </span>
-        <span id="online-count" class="online-badge-number" aria-live="polite">-</span>
-        <span class="online-badge-label">online</span>
-      </span>
-    </div>
-  );
-}
-
-function ThemeToggle() {
-  return (
-    <button
-      data-theme-toggle
-      class="theme-toggle"
-      aria-label="Toggle dark / light theme"
-      title="Toggle dark / light theme"
-    >
-      <span class="theme-toggle-track">
-        <span class="theme-toggle-thumb">
-          {/* Sun rays */}
-          <svg class="theme-toggle-icon theme-toggle-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="5" />
-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-          </svg>
-          {/* Moon crescent */}
-          <svg class="theme-toggle-icon theme-toggle-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
-        </span>
-      </span>
-      <span class="theme-toggle-stars">
-        <span class="theme-toggle-star theme-toggle-star-1"></span>
-        <span class="theme-toggle-star theme-toggle-star-2"></span>
-        <span class="theme-toggle-star theme-toggle-star-3"></span>
-      </span>
-    </button>
-  );
-}
-
-const LANG_FLAGS: Record<string, string> = {
-  en: "us", zh: "cn", fr: "fr", es: "es", ru: "ru", ja: "jp", ko: "kr", hi: "in",
-};
-
-function LangFlagIcon({ code, size }: { code: string; size?: number }) {
-  const c = LANG_FLAGS[code] || code;
-  const w = size || 20;
-  const h = Math.round(w * 0.75);
-  return <img src={`https://flagicons.lipis.dev/flags/4x3/${c}.svg`} width={w} height={h} alt={code} class="lang-flag-icon" loading="lazy" />;
-}
-
-function LanguageSwitcher({ currentLang }: { currentLang: string }) {
-  const languages = [
-    { code: "en", label: "English", native: "English" },
-    { code: "zh", label: "Chinese", native: "中文" },
-    { code: "fr", label: "French", native: "Français" },
-    { code: "es", label: "Spanish", native: "Español" },
-    { code: "ru", label: "Russian", native: "Русский" },
-    { code: "ja", label: "Japanese", native: "日本語" },
-    { code: "ko", label: "Korean", native: "한국어" },
-    { code: "hi", label: "Hindi", native: "हिन्दी" },
-  ];
-
-  const current = languages.find((l) => l.code === currentLang) || languages[0];
-  const id = "lang-dropdown";
-
-  return (
-    <div class="relative" data-lang-dropdown>
-      {/* Trigger Button */}
-      <button
-        id={`${id}-trigger`}
-        data-lang-trigger
-        class="lang-trigger"
-        aria-haspopup="listbox"
-        aria-expanded="false"
-        aria-label={`Current language: ${current.native}. Click to change language.`}
-        title={`Switch language (current: ${current.native})`}
-      >
-        <span class="lang-trigger-flag"><LangFlagIcon code={current.code} size={16} /></span>
-        <span class="lang-trigger-code">{current.code.toUpperCase()}</span>
-        <svg class="lang-trigger-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </button>
-
-      {/* Dropdown Backdrop (click outside to close) */}
-      <div id={`${id}-backdrop`} class="lang-backdrop hidden" data-lang-backdrop aria-hidden="true"></div>
-
-      {/* Dropdown Panel */}
-      <div
-        id={`${id}-panel`}
-        class="lang-panel hidden"
-        role="listbox"
-        aria-labelledby={`${id}-trigger`}
-        data-lang-panel
-      >
-        <div class="lang-panel-header">
-          <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-          </svg>
-          <span>Choose Language</span>
-        </div>
-        <div class="lang-panel-list">
-          {languages.map((lang) => {
-            const isActive = lang.code === currentLang;
-            return (
-              <button
-                key={lang.code}
-                role="option"
-                aria-selected={isActive ? "true" : "false"}
-                data-lang-switch={lang.code}
-                tabindex={isActive ? 0 : -1}
-                class={`lang-option ${isActive ? "lang-option-active" : ""}`}
-              >
-                <span class="lang-option-flag"><LangFlagIcon code={lang.code} size={20} /></span>
-                <div class="lang-option-text">
-                  <span class="lang-option-native">{lang.native}</span>
-                  <span class="lang-option-label">{lang.label}</span>
-                </div>
-                {isActive && (
-                  <svg class="lang-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Footer({ lang }: { lang: string }) {
-  return (
-    <footer class="site-footer">
-      <div class="max-w-6xl mx-auto px-4">
-        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div class="flex items-center gap-3">
-            <span class="text-lg font-black gold-text-preload">2026</span>
-            <div class="h-8 w-px bg-gray-200 dark:bg-gray-700"></div>
-            <span class="text-xs text-gray-500 dark:text-gray-400">&copy; {new Date().getFullYear()} FIFA World Cup Fan Hub</span>
-          </div>
-          <div class="flex items-center gap-6 text-xs text-gray-500 dark:text-gray-400">
-            <a href={`/${lang}`} class="hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors">{t(lang, "nav.home")}</a>
-            <a href={`/${lang}/schedule`} class="hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors">{t(lang, "nav.schedule")}</a>
-            <a href={`/${lang}/standings`} class="hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors">{t(lang, "nav.standings")}</a>
-            <a href={`/${lang}/leaderboard`} class="hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors">{t(lang, "nav.leaderboard")}</a>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-export { Layout, Header, Footer, ThemeToggle, LanguageSwitcher, OnlineCount };
+export { Layout };
