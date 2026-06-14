@@ -241,14 +241,14 @@ export async function scoreMatchHandler(c: any) {
   return c.json({ scored, match_id: matchId, errors: errors.length > 0 ? errors : undefined });
 }
 
-// Hardcoded long API key for updating match scores
-const UPDATE_SCORE_API_KEY = "fifa2026-update-score-v2-k9mX7pQ4rW8zL3nB6tY1aC5dF0jH2sVx";
-
+// API key is read from Cloudflare secret: UPDATE_SCORE_API_KEY
 function verifyApiKey(c: any): boolean {
+  const expectedKey = c.env.UPDATE_SCORE_API_KEY;
+  if (!expectedKey) return false;
   const authHeader = c.req.header("Authorization") || "";
   const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i);
   const token = bearerMatch ? bearerMatch[1] : (c.req.query("key") || "");
-  return token === UPDATE_SCORE_API_KEY;
+  return token === expectedKey;
 }
 
 export async function updateScoreHandler(c: any) {

@@ -11,6 +11,7 @@ export type Env = {
   DB: D1Database;
   KV: KVNamespace;
   ASSETS: Fetcher;
+  UPDATE_SCORE_API_KEY: string;
 };
 
 const app = new Hono<{ Bindings: Env; Variables: { user: { id: string; username: string } | null; lang: string } }>();

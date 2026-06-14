@@ -70,14 +70,15 @@ export async function calculateAndSavePoints(
     if (currentStreak >= 3) {
       finalPoints = Math.round(finalPoints * 1.5);
     }
+
+    const streakId = `streak_${userId}`;
+    const existing = await db.prepare("SELECT max_streak FROM streaks WHERE id = ?").bind(streakId).first<any>();
+    const newMax = Math.max(existing?.max_streak ?? 0, currentStreak);
+
     await db.prepare(
-      `INSERT INTO streaks (id, user_id, current_streak, max_streak)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET current_streak = ?, max_streak = MAX(max_streak, ?)`
-    ).bind(
-      `streak_${userId}`, userId, currentStreak, currentStreak,
-      currentStreak, currentStreak
-    ).run();
+      `INSERT OR REPLACE INTO streaks (id, user_id, current_streak, max_streak, updated_at)
+       VALUES (?, ?, ?, ?, datetime('now'))`
+    ).bind(streakId, userId, currentStreak, newMax).run();
   } else {
     currentStreak = 0;
     await db.prepare(
